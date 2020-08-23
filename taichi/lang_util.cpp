@@ -65,9 +65,12 @@ real measure_cpe(std::function<void()> target,
 }
 
 std::string data_type_name(DataType t) {
-  static std::map<DataType, std::string> type_names;
-  if (type_names.empty()) {
-#define REGISTER_DATA_TYPE(i, j) type_names[DataType::i] = #j;
+  switch (t) {
+
+#define REGISTER_DATA_TYPE(i, j) \
+  case DataType::i:              \
+    return j;
+
     REGISTER_DATA_TYPE(f16, float16);
     REGISTER_DATA_TYPE(f32, float32);
     REGISTER_DATA_TYPE(f64, float64);
@@ -82,9 +85,11 @@ std::string data_type_name(DataType t) {
     REGISTER_DATA_TYPE(u64, uint64);
     REGISTER_DATA_TYPE(gen, generic);
     REGISTER_DATA_TYPE(unknown, unknown);
+
 #undef REGISTER_DATA_TYPE
-  }
-  return type_names[t];
+    default:
+      TI_NOT_IMPLEMENTED
+    }
 }
 
 std::string data_type_format(DataType dt) {
@@ -106,10 +111,13 @@ std::string data_type_format(DataType dt) {
 }
 
 int data_type_size(DataType t) {
-  static std::map<DataType, int> type_sizes;
-  if (type_sizes.empty()) {
-#define REGISTER_DATA_TYPE(i, j) type_sizes[DataType::i] = sizeof(j);
-    type_sizes[DataType::f16] = 2;
+  switch (t) {
+  
+#define REGISTER_DATA_TYPE(i, j) \
+  case DataType::i:              \
+    return sizeof(j);
+
+    REGISTER_DATA_TYPE(DataType::f16, 2);
     REGISTER_DATA_TYPE(f32, float32);
     REGISTER_DATA_TYPE(f64, float64);
     REGISTER_DATA_TYPE(i8, bool);
@@ -121,31 +129,41 @@ int data_type_size(DataType t) {
     REGISTER_DATA_TYPE(u16, uint16);
     REGISTER_DATA_TYPE(u32, uint32);
     REGISTER_DATA_TYPE(u64, uint64);
-    type_sizes[DataType::gen] = 0;
-    type_sizes[DataType::unknown] = -1;
+    REGISTER_DATA_TYPE(DataType::gen, 0);
+    //REGISTER_DATA_TYPE(DataType::unknown, -1);
+
 #undef REGISTER_DATA_TYPE
-  }
-  return type_sizes[t];
+    default:
+      return -1;
+    }
 }
 
 std::string data_type_short_name(DataType t) {
-  static std::map<DataType, std::string> type_names;
-  if (type_names.empty()) {
-#define PER_TYPE(i) type_names[DataType::i] = #i;
+  switch(t) {       
+#define PER_TYPE(i) \
+  case DataType::i: \
+    return #i;
+
 #include "taichi/inc/data_type.inc.h"
+
 #undef PER_TYPE
+  default:
+    return "Unknown";
   }
-  return type_names[t];
 }
 
 std::string snode_type_name(SNodeType t) {
-  static std::map<SNodeType, std::string> type_names;
-  if (type_names.empty()) {
-#define PER_SNODE(i) type_names[SNodeType::i] = #i;
+  switch(t) {
+#define PER_SNODE(i) \
+  case SNodeType::i: \
+    return #i;
+
 #include "inc/snodes.inc.h"
+
 #undef PER_SNODE
+  default:
+    return "Unknown"
   }
-  return type_names[t];
 }
 
 bool is_gc_able(SNodeType t) {
@@ -153,84 +171,106 @@ bool is_gc_able(SNodeType t) {
 }
 
 std::string unary_op_type_name(UnaryOpType type) {
-  static std::map<UnaryOpType, std::string> type_names;
-  if (type_names.empty()) {
-#define PER_UNARY_OP(i) type_names[UnaryOpType::i] = #i;
+  switch(type) {
+#define PER_UNARY_OP(i) \
+  case UnaryOpType::i:  \
+    return #i;
+
 #include "taichi/inc/unary_op.inc.h"
 
 #undef PER_UNARY_OP
+  default:
+    return "Unknown";
   }
-  return type_names[type];
 }
 
 std::string binary_op_type_name(BinaryOpType type) {
-  static std::map<BinaryOpType, std::string> type_names;
-  if (type_names.empty()) {
-#define PER_BINARY_OP(x) type_names[BinaryOpType::x] = #x;
+  switch(type) {
+#define PER_BINARY_OP(x) \
+  case BinaryOpType::x:  \
+    return #x;
+
 #include "inc/binary_op.inc.h"
+
 #undef PER_BINARY_OP
+  default:
+    return "Unknown";
   }
-  return type_names[type];
 }
 
 std::string binary_op_type_symbol(BinaryOpType type) {
-  static std::map<BinaryOpType, std::string> type_names;
-  if (type_names.empty()) {
-#define REGISTER_TYPE(i, s) type_names[BinaryOpType::i] = #s;
-    REGISTER_TYPE(mul, *);
-    REGISTER_TYPE(add, +);
-    REGISTER_TYPE(sub, -);
-    REGISTER_TYPE(div, /);
-    REGISTER_TYPE(truediv, /);
-    REGISTER_TYPE(floordiv, /);
-    REGISTER_TYPE(mod, %);
-    REGISTER_TYPE(max, max);
-    REGISTER_TYPE(min, min);
-    REGISTER_TYPE(atan2, atan2);
-    REGISTER_TYPE(cmp_lt, <);
-    REGISTER_TYPE(cmp_le, <=);
-    REGISTER_TYPE(cmp_gt, >);
-    REGISTER_TYPE(cmp_ge, >=);
-    REGISTER_TYPE(cmp_ne, !=);
-    REGISTER_TYPE(cmp_eq, ==);
-    REGISTER_TYPE(bit_and, &);
-    REGISTER_TYPE(bit_or, |);
-    REGISTER_TYPE(bit_xor, ^);
-    REGISTER_TYPE(pow, pow);
+  switch (type) {
+#define REGISTER_TYPE(i, s) \
+ case BinaryOpType::i:      \
+  return #s;
+
+  REGISTER_TYPE(mul, *);
+  REGISTER_TYPE(add, +);
+  REGISTER_TYPE(sub, -);
+  REGISTER_TYPE(div, /);
+  REGISTER_TYPE(truediv, /);
+  REGISTER_TYPE(floordiv, /);
+  REGISTER_TYPE(mod, %);
+  REGISTER_TYPE(max, max);
+  REGISTER_TYPE(min, min);
+  REGISTER_TYPE(atan2, atan2);
+  REGISTER_TYPE(cmp_lt, <);
+  REGISTER_TYPE(cmp_le, <=);
+  REGISTER_TYPE(cmp_gt, >);
+  REGISTER_TYPE(cmp_ge, >=);
+  REGISTER_TYPE(cmp_ne, !=);
+  REGISTER_TYPE(cmp_eq, ==);
+  REGISTER_TYPE(bit_and, &);
+  REGISTER_TYPE(bit_or, |);
+  REGISTER_TYPE(bit_xor, ^);
+  REGISTER_TYPE(pow, pow);
+
 #undef REGISTER_TYPE
+  default:
+      return "Unknown"; 
   }
-  return type_names[type];
 }
 
 std::string ternary_type_name(TernaryOpType type) {
-  static std::map<TernaryOpType, std::string> type_names;
-  if (type_names.empty()) {
-#define REGISTER_TYPE(i) type_names[TernaryOpType::i] = #i;
+  switch(type) {
+#define REGISTER_TYPE(i) \
+  case TernaryOpType::i: \
+    return #i;
+
     REGISTER_TYPE(select);
+
 #undef REGISTER_TYPE
+  default:
+    return "Unknown";
   }
-  return type_names[type];
 }
 
 std::string atomic_op_type_name(AtomicOpType type) {
-  static std::map<AtomicOpType, std::string> type_names;
-  if (type_names.empty()) {
-#define REGISTER_TYPE(i) type_names[AtomicOpType::i] = #i;
+  switch(type) {
+#define REGISTER_TYPE(i) \
+  case AtomicOpType::i:  \ 
+    return #i;
+
     REGISTER_TYPE(add);
     REGISTER_TYPE(max);
     REGISTER_TYPE(min);
     REGISTER_TYPE(bit_and);
     REGISTER_TYPE(bit_or);
     REGISTER_TYPE(bit_xor);
+
 #undef REGISTER_TYPE
   }
-  return type_names[type];
+  default:
+    return "Unknown";
+  }
 }
 
 std::string snode_op_type_name(SNodeOpType type) {
-  static std::map<SNodeOpType, std::string> type_names;
-  if (type_names.empty()) {
-#define REGISTER_TYPE(i) type_names[SNodeOpType::i] = #i;
+  switch(type) {
+#define REGISTER_TYPE(i) \
+  case SNodeOpType::i:   \
+    return #i;
+
     REGISTER_TYPE(is_active);
     REGISTER_TYPE(length);
     REGISTER_TYPE(activate);
@@ -238,9 +278,11 @@ std::string snode_op_type_name(SNodeOpType type) {
     REGISTER_TYPE(append);
     REGISTER_TYPE(clear);
     REGISTER_TYPE(undefined);
+
 #undef REGISTER_TYPE
+  default:
+    return "Unknown";
   }
-  return type_names[type];
 }
 
 bool command_exist(const std::string &command) {
@@ -260,11 +302,11 @@ bool command_exist(const std::string &command) {
 }
 
 DataType promoted_type(DataType a, DataType b) {
-  std::map<std::pair<DataType, DataType>, DataType> mapping;
-  if (mapping.empty()) {
-#define TRY_SECOND(x, y)                                            \
-  mapping[std::make_pair(get_data_type<x>(), get_data_type<y>())] = \
-      get_data_type<decltype(std::declval<x>() + std::declval<y>())>();
+  std::pair<DataType, DataType> p = std::make_pair(a, b);
+  switch(p) {
+#define TRY_SECOND(x, y)                                        \
+  case std::make_pair(get_data_type<x>(), get_data_type<y>()):  \
+    return (get_data_type<decltype(std::declval<x>() + std::declval<y>())>());
 #define TRY_FIRST(x)      \
   TRY_SECOND(x, float32); \
   TRY_SECOND(x, float64); \
@@ -277,18 +319,22 @@ DataType promoted_type(DataType a, DataType b) {
   TRY_SECOND(x, uint32);  \
   TRY_SECOND(x, uint64);
 
-    TRY_FIRST(float32);
-    TRY_FIRST(float64);
-    TRY_FIRST(int8);
-    TRY_FIRST(int16);
-    TRY_FIRST(int32);
-    TRY_FIRST(int64);
-    TRY_FIRST(uint8);
-    TRY_FIRST(uint16);
-    TRY_FIRST(uint32);
-    TRY_FIRST(uint64);
+  TRY_FIRST(float32);
+  TRY_FIRST(float64);
+  TRY_FIRST(int8);
+  TRY_FIRST(int16);
+  TRY_FIRST(int32);
+  TRY_FIRST(int64);
+  TRY_FIRST(uint8);
+  TRY_FIRST(uint16);
+  TRY_FIRST(uint32);
+  TRY_FIRST(uint64);
+
+#undef TRY_FIRST
+#undef TRY_SECOND
+  default:
+    return DataType::unknown;
   }
-  return mapping[std::make_pair(a, b)];
 }
 
 std::string TypedConstant::stringify() const {
